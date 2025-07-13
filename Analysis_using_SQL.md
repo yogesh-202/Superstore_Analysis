@@ -1,23 +1,23 @@
 # SQL Project: Superstore Data Analysis
 
-This project covers the complete SQL pipeline for cleaning, transforming, analyzing insights from a retail dataset using **MySQL**.
+This project covers the complete SQL pipeline for cleaning, transforming, and analyzing insights from a retail dataset using **MySQL**.
 
 ---
 
-##  1. Database and Table Setup
+## 1. Database and Table Setup
 
 ### Create and Use Database
 
 ```sql
 CREATE DATABASE db_sql_projects;
 USE db_sql_projects;
-````
+```
 
-### Create `Store` Table
+### Create `Store` Table (with Keys)
 
 ```sql
 CREATE TABLE Store (
-    Row_ID           INT,
+    Row_ID           INT AUTO_INCREMENT PRIMARY KEY,
     Order_ID         VARCHAR(100),
     Order_Date       DATE,
     Ship_Date        DATE,
@@ -34,24 +34,15 @@ CREATE TABLE Store (
     Product_ID       VARCHAR(100),
     Category         VARCHAR(100),
     Sub_Category     VARCHAR(100),
-    Product_Name     VARCHAR(100),
-    Sales            VARCHAR(100),
+    Product_Name     VARCHAR(1000),
+    Sales            FLOAT,
     Quantity         INT,
     Discount         INT,
-    Profit           VARCHAR(100),
+    Profit           FLOAT,
     Shipping_Cost    FLOAT,
-    Order_Priority   VARCHAR(100)
+    Order_Priority   VARCHAR(100),
+    UNIQUE (Order_ID, Product_ID)
 );
-```
-
-### Alter Table for Compatibility
-
-```sql
-ALTER TABLE Store 
-MODIFY Order_Date VARCHAR(100), 
-MODIFY Ship_Date VARCHAR(100),
-MODIFY Postal_Code INT NULL,
-MODIFY Product_Name VARCHAR(1000);
 ```
 
 ### Load CSV File
@@ -61,7 +52,7 @@ SHOW VARIABLES LIKE 'secure_file_priv';
 
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/superstore_2016.csv'
 INTO TABLE Store
-FIELDS TERMINATED BY ',' 
+FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
@@ -97,7 +88,7 @@ IGNORE 1 ROWS
 
 ## 2. Data Cleaning
 
-###  Convert Date Columns
+### Convert Date Columns
 
 ```sql
 SET SQL_SAFE_UPDATES = 0;
@@ -105,12 +96,12 @@ SET SQL_SAFE_UPDATES = 0;
 UPDATE store SET order_date = STR_TO_DATE(order_date, '%Y-%m-%d');
 UPDATE store SET ship_date = STR_TO_DATE(ship_date, '%Y-%m-%d');
 
-ALTER TABLE store 
+ALTER TABLE store
 MODIFY order_date DATE,
 MODIFY ship_date DATE;
 ```
 
-### 💵 Convert Sales & Profit to FLOAT
+### Convert Sales & Profit to FLOAT
 
 ```sql
 UPDATE store SET profit = CAST(REPLACE(REPLACE(profit, '$', ''), ',', '') AS FLOAT);
@@ -122,14 +113,14 @@ ALTER TABLE store MODIFY sales FLOAT;
 
 ---
 
-##  3. Basic Data Checks
+## 3. Basic Data Checks
 
 ```sql
 SELECT COUNT(*) AS Total_Rows FROM Store;
 SELECT * FROM Store LIMIT 5;
 
-SELECT COUNT(*) AS Postal_Code_Null_Count 
-FROM Store 
+SELECT COUNT(*) AS Postal_Code_Null_Count
+FROM Store
 WHERE Postal_Code IS NULL;
 
 SELECT Order_ID, COUNT(*) AS Occurrences
@@ -140,9 +131,9 @@ HAVING Occurrences > 1;
 
 ---
 
-##  4. Exploratory Data Analysis (EDA)
+## 4. Exploratory Data Analysis (EDA)
 
-###  Sales by Category & Sub-Category
+### Sales by Category & Sub-Category
 
 ```sql
 SELECT Category, Sub_Category, SUM(Sales) AS Total_Sales
@@ -151,7 +142,7 @@ GROUP BY Category, Sub_Category
 ORDER BY Total_Sales DESC;
 ```
 
-###  Average Discount by Segment
+### Average Discount by Segment
 
 ```sql
 SELECT Segment, AVG(Discount) AS Avg_Discount
@@ -159,7 +150,7 @@ FROM Store
 GROUP BY Segment;
 ```
 
-###  Monthly Sales Trend
+### Monthly Sales Trend
 
 ```sql
 SELECT MONTHNAME(Order_Date) AS Month, SUM(Sales) AS Total_Sales
@@ -168,7 +159,7 @@ GROUP BY Month
 ORDER BY MONTH(Order_Date);
 ```
 
-###  Yearly Profit by Region
+### Yearly Profit by Region
 
 ```sql
 SELECT YEAR(Order_Date) AS Year, Region, SUM(Profit) AS Total_Profit
@@ -177,7 +168,7 @@ GROUP BY Year, Region
 ORDER BY Year, Region;
 ```
 
-###  Categorize Orders by Sales Value
+### Categorize Orders by Sales Value
 
 ```sql
 SELECT Order_ID, Sales,
@@ -189,7 +180,7 @@ SELECT Order_ID, Sales,
 FROM Store;
 ```
 
-###  Running Total Sales per Region
+### Running Total Sales per Region
 
 ```sql
 SELECT Region, Order_Date,
@@ -197,7 +188,7 @@ SELECT Region, Order_Date,
 FROM Store;
 ```
 
-###  Rank Products by Profit
+### Rank Products by Profit
 
 ```sql
 SELECT Product_Name, SUM(Profit) AS Total_Profit,
@@ -206,7 +197,7 @@ FROM Store
 GROUP BY Product_Name;
 ```
 
-###  Detect Outliers
+### Detect Outliers
 
 ```sql
 -- High Sales
@@ -216,7 +207,7 @@ SELECT * FROM Store WHERE Sales > 5000 ORDER BY Sales DESC;
 SELECT * FROM Store WHERE Discount > 0.5;
 ```
 
-###  Profit by Sales Buckets
+### Profit by Sales Buckets
 
 ```sql
 SELECT
@@ -230,10 +221,10 @@ FROM Store
 GROUP BY Sales_Range;
 ```
 
-###  General Summary
+### General Summary
 
 ```sql
-SELECT 
+SELECT
   COUNT(DISTINCT Customer_ID) AS Total_Customers,
   COUNT(*) AS Total_Orders,
   SUM(Sales) AS Total_Sales,
@@ -242,7 +233,7 @@ SELECT
 FROM Store;
 ```
 
-###  Sales and Profit by Category
+### Sales and Profit by Category
 
 ```sql
 SELECT Category, SUM(Sales) AS Total_Sales, SUM(Profit) AS Total_Profit
@@ -253,9 +244,9 @@ ORDER BY Total_Sales DESC;
 
 ---
 
-##  5. Advanced Analyses
+## 5. Advanced Analyses
 
-###  Month-over-Month Sales Growth
+### Month-over-Month Sales Growth
 
 ```sql
 WITH MonthlySales AS (
@@ -274,7 +265,7 @@ FROM SalesGrowth
 WHERE Prev_Month_Sales IS NOT NULL;
 ```
 
-###  Market Basket (Product Pairing)
+### Market Basket (Product Pairing)
 
 ```sql
 SELECT o1.Product_Name AS Product_A, o2.Product_Name AS Product_B, COUNT(*) AS Pair_Count
@@ -285,7 +276,7 @@ ORDER BY Pair_Count DESC
 LIMIT 10;
 ```
 
-###  Delivery Delay by Shipping Mode
+### Delivery Delay by Shipping Mode
 
 ```sql
 SELECT Ship_Mode, AVG(DATEDIFF(Ship_Date, Order_Date)) AS Avg_Delivery_Days, COUNT(*) AS Total_Orders
@@ -296,14 +287,20 @@ ORDER BY Avg_Delivery_Days;
 
 ---
 
-##  6. People Table Setup
+## 6. People Table Setup and Analysis
+
+### Create Table
 
 ```sql
 CREATE TABLE People (
-    Person VARCHAR(100),
+    Person VARCHAR(100) PRIMARY KEY,
     Region VARCHAR(100)
 );
+```
 
+### Load Data
+
+```sql
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/People.csv'
 INTO TABLE People
 FIELDS TERMINATED BY ','
@@ -316,19 +313,57 @@ IGNORE 1 ROWS
 );
 ```
 
+### Sample Analysis
+
+```sql
+-- Count of People per Region
+SELECT Region, COUNT(*) AS People_Count FROM People GROUP BY Region;
+
+-- Orders Managed per Person
+SELECT p.Person, COUNT(s.Order_ID) AS Orders_Managed
+FROM Store s
+JOIN People p ON s.Region = p.Region
+GROUP BY p.Person
+ORDER BY Orders_Managed DESC;
+
+-- Sales by Person
+SELECT p.Person, SUM(s.Sales) AS Total_Sales
+FROM Store s
+JOIN People p ON s.Region = p.Region
+GROUP BY p.Person;
+
+-- Profit by Person
+SELECT p.Person, SUM(s.Profit) AS Total_Profit
+FROM Store s
+JOIN People p ON s.Region = p.Region
+GROUP BY p.Person;
+
+-- Average Discount by Person
+SELECT p.Person, AVG(s.Discount) AS Avg_Discount
+FROM Store s
+JOIN People p ON s.Region = p.Region
+GROUP BY p.Person;
+```
+
 ---
 
-##  7. Returns Table Setup
+## 7. Returns Table Setup and Analysis
+
+### Create Table
 
 ```sql
 CREATE TABLE Returns (
-    Returned BOOLEAN,
+    Return_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Returned VARCHAR(100),
     Order_ID VARCHAR(100),
-    Region VARCHAR(100)
+    Region VARCHAR(100),
+    FOREIGN KEY (Order_ID) REFERENCES Store(Order_ID) ON DELETE CASCADE
 );
+```
 
-ALTER TABLE Returns MODIFY Returned VARCHAR(100);
+### Load Data
 
+```sql
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/Returns.csv'
 INTO TABLE Returns
 FIELDS TERMINATED BY ','
@@ -342,159 +377,49 @@ IGNORE 1 ROWS
 );
 ```
 
-###  Returns vs Orders Percentage
+### Sample Analysis
 
 ```sql
-SELECT 
+-- Return Rate
+SELECT
   COUNT(r.Order_ID) AS Total_Returns,
   COUNT(DISTINCT s.Order_ID) AS Total_Orders,
   ROUND(COUNT(r.Order_ID) / COUNT(DISTINCT s.Order_ID) * 100, 2) AS Return_Percentage
 FROM Store s
 LEFT JOIN Returns r ON s.Order_ID = r.Order_ID;
-```
 
-
-````markdown
-##  Sample Analysis on People Table
-
-### Count of People Assigned per Region
-
-```sql
-SELECT Region, COUNT(*) AS People_Count
-FROM People
-GROUP BY Region
-ORDER BY People_Count DESC;
-````
-
----
-
-###  List All People and Their Regions
-
-```sql
-SELECT * FROM People
-ORDER BY Region, Person;
-```
-
----
-
-### Orders Managed per Person (Based on Region)
-
-```sql
-SELECT p.Person, COUNT(s.Order_ID) AS Orders_Managed
-FROM Store s
-JOIN People p ON s.Region = p.Region
-GROUP BY p.Person
-ORDER BY Orders_Managed DESC;
-```
-
----
-
-### Total Sales Handled by Each Person
-
-```sql
-SELECT p.Person, SUM(s.Sales) AS Total_Sales
-FROM Store s
-JOIN People p ON s.Region = p.Region
-GROUP BY p.Person
-ORDER BY Total_Sales DESC;
-```
-
----
-
-### Total Profit Contributed by Each Person
-
-```sql
-SELECT p.Person, SUM(s.Profit) AS Total_Profit
-FROM Store s
-JOIN People p ON s.Region = p.Region
-GROUP BY p.Person
-ORDER BY Total_Profit DESC;
-```
-
----
-
-### Average Discount Handled per Person
-
-```sql
-SELECT p.Person, AVG(s.Discount) AS Avg_Discount
-FROM Store s
-JOIN People p ON s.Region = p.Region
-GROUP BY p.Person
-ORDER BY Avg_Discount DESC;
-```
-
-````markdown
-## Sample Analysis on Returns Table
-
-### Return Rate vs Total Orders
-
-```sql
-SELECT 
-  COUNT(r.Order_ID) AS Total_Returns,
-  COUNT(DISTINCT s.Order_ID) AS Total_Orders,
-  ROUND(COUNT(r.Order_ID) / COUNT(DISTINCT s.Order_ID) * 100, 2) AS Return_Percentage
-FROM Store s
-LEFT JOIN Returns r ON s.Order_ID = r.Order_ID;
-````
-
----
-
-### Return Count by Region
-
-```sql
+-- Returns by Region
 SELECT r.Region, COUNT(*) AS Return_Count
 FROM Returns r
-GROUP BY r.Region
-ORDER BY Return_Count DESC;
-```
+GROUP BY r.Region;
 
----
-
-### Returns Over Time (Monthly Trend)
-
-```sql
+-- Monthly Return Trend
 SELECT MONTHNAME(s.Order_Date) AS Month, COUNT(r.Order_ID) AS Returns
 FROM Returns r
 JOIN Store s ON r.Order_ID = s.Order_ID
 GROUP BY Month
 ORDER BY MONTH(s.Order_Date);
-```
 
----
-
-### Profit Impact of Returns
-
-```sql
-SELECT 
+-- Profit Lost due to Returns
+SELECT
   r.Region,
   COUNT(r.Order_ID) AS Return_Count,
   SUM(s.Profit) AS Profit_Lost
 FROM Returns r
 JOIN Store s ON r.Order_ID = s.Order_ID
-GROUP BY r.Region
-ORDER BY Profit_Lost ASC;
-```
+GROUP BY r.Region;
 
----
-
-### Products with Most Returns
-
-```sql
+-- Most Returned Products
 SELECT s.Product_Name, COUNT(r.Order_ID) AS Return_Count
 FROM Returns r
 JOIN Store s ON r.Order_ID = s.Order_ID
 GROUP BY s.Product_Name
 ORDER BY Return_Count DESC
 LIMIT 10;
-```
 
----
-
-### Ship Modes with Highest Return Rates
-
-```sql
-SELECT s.Ship_Mode, 
-       COUNT(r.Order_ID) AS Returns, 
+-- Ship Mode with Highest Return Rate
+SELECT s.Ship_Mode,
+       COUNT(r.Order_ID) AS Returns,
        COUNT(DISTINCT s.Order_ID) AS Total_Orders,
        ROUND(COUNT(r.Order_ID)/COUNT(DISTINCT s.Order_ID) * 100, 2) AS Return_Rate
 FROM Store s
@@ -502,5 +427,3 @@ LEFT JOIN Returns r ON s.Order_ID = r.Order_ID
 GROUP BY s.Ship_Mode
 ORDER BY Return_Rate DESC;
 ```
-
----
