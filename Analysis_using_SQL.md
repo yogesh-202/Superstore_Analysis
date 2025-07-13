@@ -1,6 +1,6 @@
 # SQL Project: Superstore Data Analysis
 
-This project covers the complete SQL pipeline for cleaning, transforming, analyzing, and visualizing insights from a retail dataset using **MySQL**.
+This project covers the complete SQL pipeline for cleaning, transforming, analyzing insights from a retail dataset using **MySQL**.
 
 ---
 
